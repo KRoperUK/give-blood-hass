@@ -3,6 +3,13 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.1.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.0...v1.1.0) (2026-09-15)
+
+
+### Features
+
+* NHS Give Blood integration for Home Assistant ([ff059b5](https://github.com/KRoperUK/give-blood-hass/commit/ff059b5b0d5c2b8c063f244d6cb2839570788126))
+
 ## 1.0.0 (unreleased)
 
 Initial release.

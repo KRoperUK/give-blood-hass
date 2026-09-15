@@ -9,7 +9,7 @@ from homeassistant.const import Platform
 
 NAME: Final = "NHS Give Blood"
 DOMAIN: Final = "nhs_give_blood"
-VERSION: Final = "1.0.0"  # x-release-please-version
+VERSION: Final = "1.1.0"  # x-release-please-version
 MANUFACTURER: Final = "NHS Blood and Transplant"
 
 DOCS_URL: Final = "https://github.com/KRoperUK/give-blood-hass"
