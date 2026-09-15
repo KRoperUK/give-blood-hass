@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Generate the brand assets HACS and the Home Assistant brands repository expect.
+"""Generate the brand assets HACS expects.
 
-HACS requires either a PR to home-assistant/brands or local assets under
-``custom_components/<domain>/brand/``. This script produces the local set from a
-single SVG source, so the artwork is reproducible and reviewable as text rather
-than as opaque binaries.
+home-assistant/brands no longer accepts submissions for custom components, so the
+in-repository fallback — ``custom_components/<domain>/brand/`` — is the only route
+available to a HACS integration, not merely the convenient one. This script
+produces that set from committed SVG sources, so the artwork stays reproducible and
+reviewable as text rather than becoming opaque binary history.
 
 The mark is a **blood droplet inside a rounded square**, drawn from scratch in a
 neutral red. It deliberately does **not** use the NHS logo, the NHS Blood and

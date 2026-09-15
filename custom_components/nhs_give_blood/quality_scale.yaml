@@ -30,10 +30,14 @@ rules:
   brands:
     status: exempt
     comment: >-
-      home-assistant/brands applies to core integrations. Brand assets ship in the
-      repository under custom_components/nhs_give_blood/brand/, which is the
-      fallback HACS validates against, generated from committed SVG sources by
-      scripts/make_brand_assets.py.
+      Not merely inapplicable — no longer possible. home-assistant/brands no longer
+      accepts submissions for custom components, so there is no route for a HACS
+      integration to appear there. Brand assets therefore ship in the repository at
+      custom_components/nhs_give_blood/brand/, which is the fallback HACS validates
+      against, generated from committed SVG sources by scripts/make_brand_assets.py.
+      The mark is an original blood droplet that deliberately avoids the NHS logo,
+      wordmark and NHS blue, since this project is unofficial and reusing protected
+      identity marks would imply endorsement that does not exist.
   common-modules:
     status: done
     comment: >-
