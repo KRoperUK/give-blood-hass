@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "changelog-path": "CHANGELOG.md",
+      "bump-minor-pre-major": false,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "custom_components/nhs_give_blood/manifest.json",
+          "jsonpath": "$.version"
+        },
+        "custom_components/nhs_give_blood/const.py"
+      ]
+    }
+  }
+}

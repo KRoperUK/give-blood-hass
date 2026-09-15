@@ -1,0 +1,51 @@
+/* ---------------------------------------------------------------------------
+ * Brand colours.
+ *
+ * #c8102e is NHS Blood and Transplant's donor-facing red, so the docs read as
+ * part of the same family as the app this integration talks to. Used for
+ * identification only — this project is not affiliated with or endorsed by NHSBT.
+ *
+ * Requires palette.primary = "custom" and palette.accent = "custom" in
+ * zensical.toml, which is what tells the theme to read these variables.
+ * ------------------------------------------------------------------------- */
+
+:root > * {
+  --md-primary-fg-color: #c8102e;
+  --md-primary-fg-color--light: #e4737f;
+  --md-primary-fg-color--dark: #8a0b20;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+
+  --md-accent-fg-color: #8a0b20;
+  --md-accent-fg-color--transparent: #8a0b201a;
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: #ffffffb3;
+}
+
+/* Deep red on a slate background fails contrast for body links, so lift the
+ * link colour in dark mode rather than reusing the light-mode primary. */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #ef5f72;
+  --md-accent-fg-color: #f79aa6;
+  --md-accent-fg-color--transparent: #f79aa61a;
+  --md-typeset-a-color: #ef5f72;
+}
+
+/* ---------------------------------------------------------------------------
+ * Entity reference tables.
+ *
+ * The entity tables carry long entity_ids in the first column. Without this they
+ * wrap mid-identifier, which makes them hard to scan and hard to copy.
+ * ------------------------------------------------------------------------- */
+
+.md-typeset table:not([class]) td:first-child code {
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Grid cards on the landing page.
+ * ------------------------------------------------------------------------- */
+
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.4rem;
+}

@@ -1,0 +1,25 @@
+name: HACS
+
+# Standalone HACS repository validation. Duplicated from ci.yml on purpose: this
+# runs regardless of the paths filter, because a repository-level problem (missing
+# release asset, bad hacs.json) blocks installation even when no code changed.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly: HACS tightens its requirements over time, and a scheduled run
+    # surfaces that before a release does.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: hacs/action@main
+        with:
+          category: integration

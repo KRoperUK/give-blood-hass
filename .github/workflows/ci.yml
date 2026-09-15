@@ -1,0 +1,211 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Home Assistant 2026.8+ requires Python 3.14.
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  # Docs-only pull requests shouldn't run the whole suite; the aggregate `ci` gate
+  # passes automatically when this reports no component changes.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      component: ${{ steps.filter.outputs.component }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            component:
+              - 'custom_components/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - 'pyproject.toml'
+              - 'requirements_dev.txt'
+              - 'requirements_test.txt'
+              - 'hacs.json'
+              - '.pre-commit-config.yaml'
+              - 'bandit.yaml'
+              - '.github/workflows/ci.yml'
+
+  lint:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Assert tool pins agree across files
+        run: bash scripts/check-tool-pins.sh
+
+      # Installed from requirements_test.txt so CI and pre-commit enforce the
+      # same ruleset version.
+      - name: Install ruff at the pinned version
+        run: pip install "$(grep -E '^ruff==' requirements_test.txt)"
+
+      - run: ruff check --output-format=github .
+      - run: ruff format --check .
+
+  typecheck:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements_test.txt
+      - name: mypy
+        run: |
+          set -o pipefail
+          mypy 2>&1 | sed -E 's/^([^:]+):([0-9]+): error: (.*)$/::error file=\1,line=\2::\3/'
+
+  security:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install bandit detect-secrets
+
+      - name: bandit
+        run: bandit -c bandit.yaml -r custom_components
+
+      - name: detect-secrets
+        run: git ls-files -z | xargs -0 detect-secrets-hook --baseline .secrets.baseline
+
+      # This API's responses are saturated with donor PII, so the guard runs over
+      # the whole tree in CI, not just a staged diff.
+      - name: block PII and credentials
+        run: git ls-files -z | xargs -0 python scripts/check_pii.py
+
+  pre-commit:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements_test.txt
+      # mypy and pytest have dedicated jobs; running them here too would double
+      # CI time for no extra signal.
+      - run: pre-commit run --all-files --show-diff-on-failure --hook-stage pre-commit
+
+  test:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements_test.txt
+      - run: pytest tests/ --cov=custom_components/nhs_give_blood --cov-report=xml -v
+
+  validate:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # HACS validation and hassfest check different things: HACS checks the
+      # repository layout and release setup, hassfest checks manifest/translation
+      # correctness against Home Assistant itself. Both are release blockers.
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
+      - name: hassfest
+        uses: home-assistant/actions/hassfest@master
+
+  scripts:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Syntax-check shell scripts
+        run: for file in scripts/*.sh; do bash -n "$file"; done
+      - name: Build the HACS release asset
+        run: bash scripts/package-hacs-zip.sh
+
+  # Built on every PR so a broken docs config fails review rather than the
+  # deployment. Not gated on the paths filter: a code rename can break the entity
+  # reference without touching docs/.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: "3.12"
+      - run: pip install zensical
+      - run: zensical build
+      - name: Verify the custom domain survived the build
+        run: |
+          test -f site/CNAME || { echo "::error::site/CNAME missing"; exit 1; }
+          grep -qx 'give-blood-hass.kroper.uk' site/CNAME
+
+  # Single required status check. Passes automatically on docs-only changes.
+  ci:
+    needs: [changes, lint, typecheck, security, pre-commit, test, validate, scripts, docs]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate results
+        run: |
+          # The docs build runs regardless of the paths filter, so it is gated
+          # even on docs-only changes.
+          if [ "${{ needs.docs.result }}" != "success" ]; then
+            echo "::error::docs did not succeed (${{ needs.docs.result }})"
+            exit 1
+          fi
+          if [ "${{ needs.changes.outputs.component }}" != "true" ]; then
+            echo "No component changes; docs verified, nothing else to gate."
+            exit 0
+          fi
+          for result in \
+            "lint=${{ needs.lint.result }}" \
+            "typecheck=${{ needs.typecheck.result }}" \
+            "security=${{ needs.security.result }}" \
+            "pre-commit=${{ needs['pre-commit'].result }}" \
+            "test=${{ needs.test.result }}" \
+            "validate=${{ needs.validate.result }}" \
+            "scripts=${{ needs.scripts.result }}"
+          do
+            name="${result%%=*}"
+            status="${result##*=}"
+            if [ "$status" != "success" ]; then
+              echo "::error::$name did not succeed ($status)"
+              exit 1
+            fi
+          done
+          echo "All required jobs succeeded."

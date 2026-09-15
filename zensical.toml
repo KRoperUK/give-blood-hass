@@ -1,0 +1,142 @@
+[project]
+site_name = "NHS Give Blood for Home Assistant"
+site_description = "Unofficial Home Assistant integration for NHS blood donation accounts — appointments, eligibility dates, credits and awards."
+site_author = "KRoperUK"
+site_url = "https://give-blood-hass.kroper.uk/"
+copyright = "Copyright &copy; 2026 KRoperUK — an unofficial project, not affiliated with, endorsed by, or supported by NHS Blood and Transplant"
+
+repo_url = "https://github.com/KRoperUK/give-blood-hass"
+repo_name = "KRoperUK/give-blood-hass"
+edit_uri = "edit/main/docs/"
+
+extra_css = ["stylesheets/extra.css"]
+
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = [
+    { "Installation" = "installation.md" },
+    { "Configuration" = "configuration.md" },
+  ] },
+  { "Reference" = [
+    { "Entities" = "entities.md" },
+    { "Automations" = "automations.md" },
+    { "The API" = "api.md" },
+  ] },
+  { "About" = [
+    { "Design decisions" = "design.md" },
+    { "Privacy" = "privacy.md" },
+    { "Troubleshooting" = "troubleshooting.md" },
+  ] },
+]
+
+[project.theme]
+# Pinned explicitly: docs.yml installs zensical unpinned, and `variant` is a
+# defaulted setting, so an upstream default change would silently restyle the
+# whole site mid-release.
+variant = "modern"
+language = "en"
+features = [
+  "content.action.edit",
+  "content.action.view",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.instant.progress",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "search.suggest",
+  "toc.follow",
+]
+
+[project.theme.icon]
+logo = "lucide/droplet"
+repo = "fontawesome/brands/github"
+
+# NHS Blood and Transplant's own donor-facing red. Defined in
+# docs/stylesheets/extra.css; "custom" is what tells the theme to read those CSS
+# variables instead of a named palette.
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/KRoperUK/give-blood-hass"
+
+[[project.extra.social]]
+icon = "simple/homeassistant"
+link = "https://my.home-assistant.io/redirect/hacs_repository/?owner=KRoperUK&repository=give-blood-hass&category=integration"
+name = "Install via HACS"
+
+[[project.extra.social]]
+icon = "simple/pypi"
+link = "https://pypi.org/project/nhs-give-blood/"
+name = "The nhs-give-blood library"
+
+# Markdown extensions (Zensical defaults — admonitions, code highlighting, tabs).
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.def_list]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.tables]
+[project.markdown_extensions.toc]
+permalink = true
+[project.markdown_extensions.pymdownx.betterem]
+[project.markdown_extensions.pymdownx.caret]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.emoji]
+emoji_generator = "zensical.extensions.emoji.to_svg"
+emoji_index = "zensical.extensions.emoji.twemoji"
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+line_spans = "__span"
+pygments_lang_class = true
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.mark]
+[project.markdown_extensions.pymdownx.smartsymbols]
+
+[project.markdown_extensions.pymdownx.superfences]
+# Declaring superfences at all replaces zensical's default `custom_fences`
+# rather than merging with it, which silently disables mermaid: a ```mermaid
+# block renders as a plain code block. Restore the default explicitly.
+custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+combine_header_slug = true
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+[project.markdown_extensions.pymdownx.tilde]

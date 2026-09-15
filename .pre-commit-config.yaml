@@ -1,0 +1,83 @@
+# Tool versions are pinned here and in requirements_test.txt. CI resolves them
+# from requirements_test.txt and scripts/check-tool-pins.sh asserts they agree, so
+# a bump in one place can't drift from the other.
+default_install_hook_types: [pre-commit, pre-push]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: check-case-conflict
+      - id: no-commit-to-branch
+        args: [--branch, main]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.21
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # Static security analysis of the integration. Scoped to the component: tests
+  # legitimately use asserts and synthetic credentials.
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        args: [-c, bandit.yaml]
+        files: ^custom_components/
+
+  # Entropy-based secret detection, against an audited baseline.
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: ^\.secrets\.baseline$
+
+  - repo: local
+    hooks:
+      # Knows the NHS Give Blood API's payload shapes: donor ids, donation ids,
+      # UK postcodes and phone numbers, and the app's token formats. Neither
+      # bandit nor detect-secrets catches any of those.
+      - id: check-pii
+        name: block real PII and credentials
+        entry: python scripts/check_pii.py
+        language: system
+        pass_filenames: true
+        types: [text]
+
+      - id: format-ha-manifest
+        name: normalise manifest.json key order
+        entry: python scripts/format_manifest.py
+        language: system
+        pass_filenames: false
+        files: ^custom_components/nhs_give_blood/manifest\.json$
+
+      - id: check-tool-pins
+        name: ruff and mypy pins agree across files
+        entry: bash scripts/check-tool-pins.sh
+        language: system
+        pass_filenames: false
+
+      # pre-push, so ordinary commits stay fast while pushes mirror CI.
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

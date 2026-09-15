@@ -1,0 +1,21 @@
+{
+  "domain": "nhs_give_blood",
+  "name": "NHS Give Blood",
+  "codeowners": [
+    "@kroperuk"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/KRoperUK/give-blood-hass",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/KRoperUK/give-blood-hass/issues",
+  "loggers": [
+    "nhs_give_blood"
+  ],
+  "quality_scale": "silver",
+  "requirements": [
+    "nhs-give-blood>=0.1.0"
+  ],
+  "version": "1.0.0"
+}

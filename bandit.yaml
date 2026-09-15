@@ -1,0 +1,12 @@
+# Bandit configuration for the NHS Give Blood integration.
+#
+# Only the integration package is scanned. Tests are excluded because they
+# legitimately use `assert` (B101) and synthetic credential literals (B105/B106),
+# and excluding them keeps real findings visible rather than buried in noise.
+exclude_dirs:
+  - tests
+  - .venv
+  - scripts
+  - .ha-config
+
+skips: []

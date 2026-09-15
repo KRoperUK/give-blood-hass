@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://give-blood-hass.kroper.uk
+    about: Installation, entities, automations, privacy and troubleshooting.
+  - name: API or client library problem
+    url: https://github.com/KRoperUK/give-blood-py/issues
+    about: For issues in the underlying nhs-give-blood library rather than the integration.
+  - name: NHS Give Blood account or booking help
+    url: https://www.blood.co.uk/contact-us/
+    about: This project is unofficial. NHS Blood and Transplant cannot support it, and I cannot help with your account.
+  - name: Report a security or privacy issue privately
+    url: https://github.com/KRoperUK/give-blood-hass/security/advisories/new
+    about: Anything that could expose donor data or credentials.

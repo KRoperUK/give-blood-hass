@@ -1,0 +1,50 @@
+# This repo is a Home Assistant custom integration, not a distributable package,
+# so there is no [project] table or build backend. Runtime dependencies come from
+# custom_components/nhs_give_blood/manifest.json; dev/test dependencies come from
+# requirements_dev.txt and requirements_test.txt.
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "S"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components", "tests"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert and synthetic credential literals by design.
+"tests/**" = ["S101", "S105", "S106", "S603", "S607"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+ignore_missing_imports = true
+check_untyped_defs = true
+files = ["custom_components/nhs_give_blood"]
+
+[tool.pytest.ini_options]
+# Live tests (marked `live`) hit the real NHSBT API and need credentials, so they
+# are deselected by default; run them explicitly with `pytest -m live`.
+addopts = "-qq --cov=custom_components.nhs_give_blood --cov-report=term-missing -m 'not live'"
+console_output_style = "count"
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "live: requires live NHS Give Blood credentials (deselect with -m 'not live')",
+]
+
+[tool.coverage.run]
+branch = false
+source = ["custom_components/nhs_give_blood"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+]

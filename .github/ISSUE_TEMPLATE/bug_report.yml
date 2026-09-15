@@ -1,0 +1,72 @@
+name: Bug report
+description: Something is not working as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before attaching a diagnostics download, please read it.
+        It is built to exclude personal data, but this integration handles donor
+        records and a second pair of eyes costs nothing.
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.9.2"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version
+      description: Settings → Devices & services → NHS Give Blood
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations:
+      required: true
+
+  - type: textarea
+    id: entities
+    attributes:
+      label: Affected entities and their states
+      description: Entity IDs plus what they show. Developer tools → States.
+      render: text
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: |
+        Enable debug logging first:
+        ```yaml
+        logger:
+          logs:
+            custom_components.nhs_give_blood: debug
+            nhs_give_blood: debug
+        ```
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I have read the [troubleshooting guide](https://give-blood-hass.kroper.uk/troubleshooting/)
+          required: true
+        - label: I have removed any personal data from what I am attaching
+          required: true

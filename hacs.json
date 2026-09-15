@@ -1,0 +1,7 @@
+{
+  "name": "NHS Give Blood",
+  "filename": "nhs_give_blood.zip",
+  "zip_release": true,
+  "hacs": "1.6.0",
+  "homeassistant": "2026.8.0"
+}

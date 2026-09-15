@@ -1,0 +1,103 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "appointment_booked": {
+        "default": "mdi:calendar-blank",
+        "state": {
+          "on": "mdi:calendar-check"
+        }
+      },
+      "booking_system_problem": {
+        "default": "mdi:calendar-check-outline",
+        "state": {
+          "on": "mdi:calendar-remove"
+        }
+      },
+      "data_degraded": {
+        "default": "mdi:database-check",
+        "state": {
+          "on": "mdi:database-alert"
+        }
+      },
+      "eligible_to_donate": {
+        "default": "mdi:account-clock",
+        "state": {
+          "on": "mdi:account-check"
+        }
+      },
+      "email_change_pending": {
+        "default": "mdi:email-check",
+        "state": {
+          "on": "mdi:email-sync"
+        }
+      },
+      "platelet_plus": {
+        "default": "mdi:star-circle-outline",
+        "state": {
+          "on": "mdi:star-circle"
+        }
+      }
+    },
+    "calendar": {
+      "appointments": {
+        "default": "mdi:calendar-heart"
+      }
+    },
+    "sensor": {
+      "award_level": {
+        "default": "mdi:medal"
+      },
+      "blood_group": {
+        "default": "mdi:blood-bag"
+      },
+      "bookable_from": {
+        "default": "mdi:calendar-plus"
+      },
+      "credits_to_next_award": {
+        "default": "mdi:counter"
+      },
+      "donation_credits": {
+        "default": "mdi:water-plus"
+      },
+      "donation_type": {
+        "default": "mdi:needle"
+      },
+      "donations_recorded": {
+        "default": "mdi:format-list-numbered"
+      },
+      "donor_messages": {
+        "default": "mdi:message-text"
+      },
+      "eligible_from": {
+        "default": "mdi:calendar-check"
+      },
+      "last_donation": {
+        "default": "mdi:history"
+      },
+      "nearest_plasma_venue": {
+        "default": "mdi:map-marker-radius"
+      },
+      "nearest_plasma_venue_distance": {
+        "default": "mdi:map-marker-distance"
+      },
+      "next_appointment": {
+        "default": "mdi:calendar-clock"
+      },
+      "next_appointment_venue": {
+        "default": "mdi:map-marker"
+      },
+      "next_award": {
+        "default": "mdi:medal-outline"
+      },
+      "registered_since": {
+        "default": "mdi:card-account-details"
+      },
+      "total_awards": {
+        "default": "mdi:trophy"
+      },
+      "upcoming_appointments": {
+        "default": "mdi:calendar-multiple"
+      }
+    }
+  }
+}

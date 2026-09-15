@@ -1,0 +1,131 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "NHS Give Blood",
+        "description": "Sign in with the same email address and password you use for the NHS Give Blood app. Your password is stored in Home Assistant so the integration can recover on its own when NHS Blood and Transplant rotates its access tokens.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in again",
+        "description": "NHS Give Blood rejected the stored credentials. Sign in again to reconnect.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach NHS Give Blood. This is usually temporary — check https://my.blood.co.uk and try again.",
+      "invalid_auth": "That email address and password were rejected. Check them in the NHS Give Blood app first.",
+      "unknown": "Something unexpected went wrong. Check the Home Assistant log for details."
+    },
+    "abort": {
+      "already_configured": "This donor account is already set up.",
+      "reauth_successful": "Reconnected to NHS Give Blood.",
+      "wrong_account": "Those credentials are for a different donor account. Sign in with the account this entry was originally set up with, or add the other account separately."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "NHS Give Blood options",
+        "description": "Donor data changes on the order of days, so there is little to gain from polling frequently.",
+        "data": {
+          "scan_interval_minutes": "Update interval",
+          "include_donation_history": "Fetch donation history"
+        },
+        "data_description": {
+          "scan_interval_minutes": "How often to check for changes. The default of 30 minutes keeps a booking made in the app appearing promptly without putting needless load on a public health service.",
+          "include_donation_history": "Powers the last donation and donations recorded sensors. Turn off to make each update one request lighter."
+        }
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "appointment_booked": {
+        "name": "Appointment booked"
+      },
+      "booking_system_problem": {
+        "name": "Booking system problem"
+      },
+      "data_degraded": {
+        "name": "Data degraded"
+      },
+      "eligible_to_donate": {
+        "name": "Eligible to donate"
+      },
+      "email_change_pending": {
+        "name": "Email change pending"
+      },
+      "platelet_plus": {
+        "name": "Platelet Plus"
+      }
+    },
+    "calendar": {
+      "appointments": {
+        "name": "Appointments"
+      }
+    },
+    "sensor": {
+      "award_level": {
+        "name": "Award level"
+      },
+      "blood_group": {
+        "name": "Blood group"
+      },
+      "bookable_from": {
+        "name": "Can book from"
+      },
+      "credits_to_next_award": {
+        "name": "Credits to next award"
+      },
+      "donation_credits": {
+        "name": "Donation credits"
+      },
+      "donation_type": {
+        "name": "Donation type"
+      },
+      "donations_recorded": {
+        "name": "Donations recorded"
+      },
+      "donor_messages": {
+        "name": "Donor messages"
+      },
+      "eligible_from": {
+        "name": "Eligible from"
+      },
+      "last_donation": {
+        "name": "Last donation"
+      },
+      "nearest_plasma_venue": {
+        "name": "Nearest plasma venue"
+      },
+      "nearest_plasma_venue_distance": {
+        "name": "Nearest plasma venue distance"
+      },
+      "next_appointment": {
+        "name": "Next appointment"
+      },
+      "next_appointment_venue": {
+        "name": "Next appointment venue"
+      },
+      "next_award": {
+        "name": "Next award"
+      },
+      "registered_since": {
+        "name": "Registered since"
+      },
+      "total_awards": {
+        "name": "Total awards"
+      },
+      "upcoming_appointments": {
+        "name": "Upcoming appointments"
+      }
+    }
+  }
+}
