@@ -302,3 +302,59 @@ class TestBrandAssets:
         script = REPO_ROOT / "scripts" / "make_brand_assets.py"
         assert script.is_file()
         assert "rsvg-convert" in script.read_text(), "the dependency should be documented in the script"
+
+
+class TestCiWiring:
+    """Guards on the CI graph itself, which nothing else would catch."""
+
+    @pytest.fixture(scope="class")
+    def workflow(self) -> dict[str, Any]:
+        import yaml
+
+        return yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text())
+
+    #: Jobs that `pip install -r requirements_test.txt`, and so cannot run until
+    #: the pinned client-library floor exists on PyPI.
+    LIBRARY_DEPENDENT = ("typecheck", "pre-commit", "test")
+
+    def test_preflight_job_exists(self, workflow: dict[str, Any]) -> None:
+        assert "preflight" in workflow["jobs"]
+
+    @pytest.mark.parametrize("job", LIBRARY_DEPENDENT)
+    def test_library_dependent_jobs_wait_on_preflight(self, workflow: dict[str, Any], job: str) -> None:
+        """Without this, a missing release surfaces as an opaque pip error."""
+        needs = workflow["jobs"][job]["needs"]
+        needs = [needs] if isinstance(needs, str) else needs
+        assert "preflight" in needs, f"{job} installs the library but does not wait on preflight"
+
+    def test_preflight_is_gated_by_the_aggregate_check(self, workflow: dict[str, Any]) -> None:
+        """A check nobody gates on is decoration."""
+        assert "preflight" in workflow["jobs"]["ci"]["needs"]
+        assert "preflight=" in workflow["jobs"]["ci"]["steps"][0]["run"]
+
+    def test_preflight_script_exists_and_is_syntactically_valid(self) -> None:
+        script = REPO_ROOT / "scripts" / "check-library-published.sh"
+        assert script.is_file()
+        result = subprocess.run(["bash", "-n", str(script)], capture_output=True, check=False)
+        assert result.returncode == 0, result.stderr.decode()
+
+    def test_every_action_is_pinned_to_a_sha(self) -> None:
+        """A floating tag is mutable, so a pinned SHA is the only reviewable form."""
+        unpinned: list[str] = []
+        for path in (REPO_ROOT / ".github" / "workflows").glob("*.yml"):
+            for number, line in enumerate(path.read_text().splitlines(), start=1):
+                stripped = line.strip()
+                if not stripped.startswith("- uses:"):
+                    continue
+                reference = stripped.split("uses:", 1)[1].strip()
+                if "@" not in reference:
+                    unpinned.append(f"{path.name}:{number}: {reference}")
+                    continue
+                pin = reference.split("@", 1)[1].split()[0]
+                # hacs/action is documented as @main upstream and publishes no
+                # tags to pin against.
+                if reference.startswith(("hacs/action", "home-assistant/actions")):
+                    continue
+                if not re.fullmatch(r"[0-9a-f]{40}", pin):
+                    unpinned.append(f"{path.name}:{number}: {reference}")
+        assert not unpinned, f"actions not pinned to a SHA: {unpinned}"

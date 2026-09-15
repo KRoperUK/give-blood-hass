@@ -42,6 +42,27 @@ jobs:
               - 'bandit.yaml'
               - '.github/workflows/ci.yml'
 
+
+  # The integration pins its client library by floor in two places
+  # (manifest.json, which is what Home Assistant installs at runtime, and
+  # requirements_dev.txt, which is what CI installs). If that floor names a
+  # version that is not on PyPI, every dependent job fails with an opaque pip
+  # resolution error. This turns that into one legible message.
+  #
+  # It catches a recurring mistake in a paired repo: raising the floor here before
+  # the library release that satisfies it has actually published.
+  preflight:
+    needs: changes
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: The pinned client library floor must exist on PyPI
+        run: bash scripts/check-library-published.sh
+
   lint:
     needs: changes
     if: needs.changes.outputs.component == 'true'
@@ -64,7 +85,7 @@ jobs:
       - run: ruff format --check .
 
   typecheck:
-    needs: changes
+    needs: [changes, preflight]
     if: needs.changes.outputs.component == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -103,7 +124,7 @@ jobs:
         run: git ls-files -z | xargs -0 python scripts/check_pii.py
 
   pre-commit:
-    needs: changes
+    needs: [changes, preflight]
     if: needs.changes.outputs.component == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -121,7 +142,7 @@ jobs:
           SKIP: no-commit-to-branch
 
   test:
-    needs: changes
+    needs: [changes, preflight]
     if: needs.changes.outputs.component == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -180,7 +201,7 @@ jobs:
 
   # Single required status check. Passes automatically on docs-only changes.
   ci:
-    needs: [changes, lint, typecheck, security, pre-commit, test, validate, scripts, docs]
+    needs: [changes, preflight, lint, typecheck, security, pre-commit, test, validate, scripts, docs]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -197,6 +218,7 @@ jobs:
             exit 0
           fi
           for result in \
+            "preflight=${{ needs.preflight.result }}" \
             "lint=${{ needs.lint.result }}" \
             "typecheck=${{ needs.typecheck.result }}" \
             "security=${{ needs.security.result }}" \
