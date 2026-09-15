@@ -74,8 +74,16 @@ EOF
     exit 1
 fi
 
-# Anything else — a network failure, a PyPI outage — is not a missing release, and
-# must not be reported as one.
-echo "::error::Could not check '$requirement' against PyPI. This looks like a network" >&2
-echo "::error::or PyPI availability problem rather than a missing release." >&2
+# Anything else — no pip in the interpreter, a network failure, a PyPI outage — is
+# not a missing release and must not be reported as one. Saying "not published"
+# when the real cause is a broken runner would send someone off to publish a
+# release that already exists.
+if echo "$output" | grep -qiE "no module named pip"; then
+    echo "::error::This interpreter has no pip, so '$requirement' could not be checked." >&2
+    echo "::error::That is an environment problem, not a missing release." >&2
+    exit 1
+fi
+
+echo "::error::Could not check '$requirement' against PyPI. Judging by the pip output" >&2
+echo "::error::above this is a network or PyPI availability problem, not a missing release." >&2
 exit 1
