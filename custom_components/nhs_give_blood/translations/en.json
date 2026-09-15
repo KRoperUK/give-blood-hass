@@ -19,7 +19,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Could not reach NHS Give Blood. This is usually temporary — check https://my.blood.co.uk and try again.",
+      "cannot_connect": "Could not reach NHS Give Blood. This is usually temporary; check the NHS Give Blood website is up and try again.",
       "invalid_auth": "That email address and password were rejected. Check them in the NHS Give Blood app first.",
       "unknown": "Something unexpected went wrong. Check the Home Assistant log for details."
     },

@@ -113,8 +113,12 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - run: pip install -r requirements_test.txt
       # mypy and pytest have dedicated jobs; running them here too would double
-      # CI time for no extra signal.
+      # CI time for no extra signal. `no-commit-to-branch` is a local guard
+      # against committing straight to main — CI *is* checked out on main, so it
+      # always fails here and is skipped rather than removed.
       - run: pre-commit run --all-files --show-diff-on-failure --hook-stage pre-commit
+        env:
+          SKIP: no-commit-to-branch
 
   test:
     needs: changes
