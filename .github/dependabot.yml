@@ -54,9 +54,15 @@ updates:
     ignore:
       # The Home Assistant floor is set deliberately to "latest release minus
       # about one month" so the integration keeps working for people who have not
-      # updated yet. Tracking the newest release would silently narrow that, so
-      # the floor is raised by hand when the support window moves — not by a bot.
+      # updated yet. Tracking upstream would silently narrow that, so the floor
+      # moves by hand when the support window does — not by a bot.
+      #
+      # Patch bumps are ignored too, not just major and minor. Raising the floor
+      # from 2026.8.0 to 2026.8.3 would exclude anyone still on 2026.8.0 for no
+      # reason: the integration does not need anything added in those patches. A
+      # floor is a compatibility claim, not a record of the newest release.
       - dependency-name: homeassistant
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+          - version-update:semver-patch
