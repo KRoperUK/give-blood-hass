@@ -1,4 +1,4 @@
 # Runtime dependencies for local development. The floor here must match
 # manifest.json's `requirements` entry, and both must move together.
-homeassistant>=2026.8.0
+homeassistant>=2026.8.3
 nhs-give-blood>=0.1.0
