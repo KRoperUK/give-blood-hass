@@ -3,6 +3,27 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.0.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.0...v1.0.0) (2026-09-15)
+
+
+### Features
+
+* NHS Give Blood integration for Home Assistant ([ff059b5](https://github.com/KRoperUK/give-blood-hass/commit/ff059b5b0d5c2b8c063f244d6cb2839570788126))
+
+
+### Bug Fixes
+
+* **ci:** distinguish a missing pip from a missing release in the preflight ([1dc86d4](https://github.com/KRoperUK/give-blood-hass/commit/1dc86d4bea443242d0fb865e0b3f82b308589710))
+* **ci:** make the library preflight check actually resolve against PyPI ([132b48b](https://github.com/KRoperUK/give-blood-hass/commit/132b48b81858d0cc53d5e9d4f40027f90fb2ea71))
+* satisfy hassfest and unblock the CI security job ([f9420d3](https://github.com/KRoperUK/give-blood-hass/commit/f9420d39be9019eb2c2cbad8f102d0de2c0aeb91))
+* ship brand assets so HACS validation passes ([fe9fb6e](https://github.com/KRoperUK/give-blood-hass/commit/fe9fb6e6114acfb7b047c3f0217a34a8198f0c81))
+* stop ruff rewriting maintainer scripts into Python 3.14-only syntax ([12c699a](https://github.com/KRoperUK/give-blood-hass/commit/12c699a24467317af15bbbf5d91ec53a7e9667be))
+
+
+### Miscellaneous Chores
+
+* pin the first release to 1.0.0 ([12e9e68](https://github.com/KRoperUK/give-blood-hass/commit/12e9e6866f3391cff9b1106d741e7f9c606d4756))
+
 ## 1.0.0 (unreleased)
 
 Initial release.
