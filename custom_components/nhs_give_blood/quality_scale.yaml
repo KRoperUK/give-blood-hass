@@ -1,0 +1,281 @@
+# Home Assistant Integration Quality Scale — self-assessment.
+#
+# hassfest only *validates* this file for core integrations; for a custom (HACS)
+# integration it is an honest status record. It exists because manifest.json
+# declares a tier, and a claim with no evidence behind it is worth less than no
+# claim at all.
+#
+# Declared tier: silver. Every Bronze and Silver rule below is done or exempt.
+# Gold is deliberately not claimed: `reconfiguration-flow` and
+# `exception-translations` are genuinely not implemented, and both are noted as
+# todo rather than argued away. All three Platinum rules are met, but Platinum is
+# not claimed while Gold is incomplete.
+rules:
+  # --- Bronze ---
+  action-setup:
+    status: exempt
+    comment: >-
+      The integration registers no actions. It is read-only by design: the API can
+      book, reschedule and cancel appointments, but a mis-fired automation there
+      releases a real clinic slot at an NHS donation centre with no undo. See
+      https://give-blood-hass.kroper.uk/design/#why-read-only
+  appropriate-polling:
+    status: done
+    comment: >-
+      30-minute default interval. Donor data changes on the order of days —
+      eligibility dates move after a donation, appointments when the donor books —
+      so faster polling asks a public health service for data that cannot have
+      changed. Configurable 5-1440 minutes, with automatic backoff to 4 hours after
+      three consecutive failures and immediate restoration on recovery.
+  brands:
+    status: exempt
+    comment: >-
+      home-assistant/brands applies to core integrations. Brand assets ship in the
+      repository under custom_components/nhs_give_blood/brand/, which is the
+      fallback HACS validates against, generated from committed SVG sources by
+      scripts/make_brand_assets.py.
+  common-modules:
+    status: done
+    comment: >-
+      coordinator.py holds the DataUpdateCoordinator, entity.py the shared base
+      class, api.py the adapter over the client library.
+  config-flow:
+    status: done
+    comment: >-
+      UI-only setup with selectors (email, password) and description placeholders.
+      No YAML configuration path exists or is planned.
+  config-flow-test-coverage:
+    status: done
+    comment: >-
+      tests/test_config_flow.py covers the user step, every error branch
+      (invalid_auth, cannot_connect, unknown), recovery after a failed attempt,
+      duplicate rejection, the reauth chain including the wrong-account abort, and
+      the options flow.
+  dependency-transparency:
+    status: done
+    comment: >-
+      Single runtime dependency, nhs-give-blood, published to PyPI from
+      KRoperUK/give-blood-py via trusted publishing, MIT licensed, source public.
+  docs-actions:
+    status: exempt
+    comment: The integration provides no actions.
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no conditions.
+  docs-high-level-description:
+    status: done
+    comment: README and https://give-blood-hass.kroper.uk both open with one.
+  docs-installation-instructions:
+    status: done
+    comment: https://give-blood-hass.kroper.uk/installation/ covers HACS and manual.
+  docs-removal-instructions:
+    status: done
+    comment: >-
+      https://give-blood-hass.kroper.uk/privacy/#removing-your-data covers entry
+      deletion, what it revokes, and purging recorder history.
+  docs-triggers:
+    status: exempt
+    comment: The integration provides no triggers.
+  entity-event-setup:
+    status: exempt
+    comment: >-
+      Cloud polling only. Entities subscribe to nothing beyond the coordinator,
+      which CoordinatorEntity manages.
+  entity-unique-id:
+    status: done
+    comment: >-
+      Unique ids are {donor_id}_{key}. Donor-keyed rather than entry-keyed so that
+      history and customisations survive removing and re-adding the integration.
+  has-entity-name:
+    status: done
+    comment: _attr_has_entity_name = True on the shared base class.
+  runtime-data:
+    status: done
+    comment: >-
+      A typed GiveBloodRuntimeData dataclass on entry.runtime_data, with a
+      ConfigEntry type alias. hass.data is not used.
+  test-before-configure:
+    status: done
+    comment: >-
+      The config flow authenticates before creating the entry and maps the outcome
+      to invalid_auth or cannot_connect.
+  test-before-setup:
+    status: done
+    comment: >-
+      async_setup_entry validates credentials first, raising ConfigEntryAuthFailed
+      or ConfigEntryNotReady so Home Assistant prompts or retries appropriately.
+  unique-config-entry:
+    status: done
+    comment: >-
+      unique_id is the donor_id claim from the access token, so the same account
+      cannot be added twice even after an email change. Reauthenticating against a
+      different donor is refused rather than silently repointing every entity.
+
+  # --- Silver ---
+  action-exceptions:
+    status: exempt
+    comment: The integration provides no actions.
+  config-entry-unloading:
+    status: done
+    comment: >-
+      async_unload_entry unloads all platforms and signs out best-effort; a failed
+      sign-out does not block the unload.
+  docs-configuration-parameters:
+    status: done
+    comment: https://give-blood-hass.kroper.uk/configuration/ documents both options.
+  docs-installation-parameters:
+    status: done
+    comment: >-
+      The installation page explains what each credential is for, and why the
+      password is stored rather than tokens alone.
+  entity-unavailable:
+    status: done
+    comment: >-
+      Availability is coordinator success *and* a present account payload. A
+      degraded snapshot keeps core entities available while affected values report
+      unknown, and the failover sensor reports unknown rather than a false
+      all-clear when its own check failed.
+  integration-owner:
+    status: done
+    comment: codeowners is @kroperuk; .github/CODEOWNERS matches.
+  log-when-unavailable:
+    status: done
+    comment: >-
+      The coordinator logs once per transition, not per poll: a warning when
+      authentication expires, UpdateFailed for transient failures, and an info line
+      when backing off or recovering.
+  parallel-updates:
+    status: done
+    comment: >-
+      PARALLEL_UPDATES = 0 in sensor.py, binary_sensor.py and calendar.py. Zero is
+      correct here: a single coordinator fetch feeds every entity, so there are no
+      per-entity requests to serialise and no actions that could write.
+  reauthentication-flow:
+    status: done
+    comment: >-
+      async_step_reauth / reauth_confirm, triggered by ConfigEntryAuthFailed.
+      Credentials for a different donor account are refused with a wrong_account
+      abort. Transient auth failures are classified as CannotConnect so an outage
+      does not produce a reauth prompt the user cannot act on.
+  test-coverage:
+    status: done
+    comment: >-
+      98% over 235 tests, against an 80% floor. Live tests additionally exercise the
+      whole stack against a real account and assert that no donor data reaches
+      entities or diagnostics.
+
+  # --- Gold (not claimed) ---
+  devices:
+    status: done
+    comment: One device per donor account, deliberately named "NHS Give Blood" rather
+      than after the donor, because device names appear in logs and diagnostics.
+  diagnostics:
+    status: done
+    comment: >-
+      Built from an allowlist of non-identifying fields rather than by redacting
+      known-bad keys, because an allowlist fails safe when this reverse-engineered
+      API grows a field. Donor id appears as a truncated hash; credentials appear as
+      presence booleans only.
+  discovery:
+    status: exempt
+    comment: A cloud account cannot be discovered on the network.
+  discovery-update-info:
+    status: exempt
+    comment: No discovery.
+  docs-data-update:
+    status: done
+    comment: >-
+      https://give-blood-hass.kroper.uk/configuration/ documents the polling model,
+      the backoff behaviour and why the default is what it is.
+  docs-examples:
+    status: done
+    comment: >-
+      https://give-blood-hass.kroper.uk/automations/ has worked automations,
+      dashboard cards and template sensors, each guarding against unknown states.
+  docs-known-limitations:
+    status: done
+    comment: >-
+      Documented throughout: read-only by design, truncated donation history,
+      unit assumption on venue distance, undocumented donation type codes, and the
+      unofficial and unsupported nature of the API.
+  docs-supported-devices:
+    status: exempt
+    comment: A service integration with no devices to enumerate.
+  docs-supported-functions:
+    status: done
+    comment: https://give-blood-hass.kroper.uk/entities/ documents every entity.
+  docs-troubleshooting:
+    status: done
+    comment: https://give-blood-hass.kroper.uk/troubleshooting/
+  docs-use-cases:
+    status: done
+    comment: The documentation home page and the automations page.
+  dynamic-devices:
+    status: exempt
+    comment: >-
+      One account is one device, created at setup. Nothing appears or disappears at
+      runtime.
+  entity-category:
+    status: done
+    comment: >-
+      EntityCategory.DIAGNOSTIC on donations_recorded, donation_type,
+      registered_since, booking_system_problem, data_degraded, platelet_plus and
+      email_change_pending.
+  entity-device-class:
+    status: done
+    comment: >-
+      TIMESTAMP on the date sensors, DISTANCE on the plasma venue distance, PROBLEM
+      on the two diagnostic binary sensors. Deliberately omitted where no device
+      class fits, rather than forcing an inaccurate one.
+  entity-disabled-by-default:
+    status: done
+    comment: >-
+      The niche and diagnostic-only entities (plasma venue and its distance,
+      data_degraded, platelet_plus, email_change_pending) ship disabled.
+  entity-translations:
+    status: done
+    comment: >-
+      Every entity has a translation_key with an entry in strings.json and
+      translations/en.json; a hygiene test enforces parity.
+  exception-translations:
+    status: todo
+    comment: >-
+      Config-flow errors are translated, but the integration raises no
+      HomeAssistantError with a translation_key. There is currently nothing to
+      translate — the read-only design means no action can fail in front of a user —
+      so this becomes actionable only if actions are ever added.
+  icon-translations:
+    status: done
+    comment: >-
+      icons.json covers every entity, with state-specific icons on the binary
+      sensors. A hygiene test enforces coverage.
+  reconfiguration-flow:
+    status: todo
+    comment: >-
+      Not implemented. Credentials can be changed through the reauth flow and both
+      options through the options flow, so the gap is narrow, but it is a real gap
+      rather than an exemption.
+  repair-issues:
+    status: exempt
+    comment: >-
+      No failure mode here is user-repairable beyond re-authentication, which the
+      reauth flow already surfaces. Raising a repair issue for an upstream outage
+      would be noise the user cannot act on.
+  stale-devices:
+    status: exempt
+    comment: One device per entry, removed with the entry.
+
+  # --- Platinum (met, but not claimed while Gold is incomplete) ---
+  async-dependency:
+    status: done
+    comment: nhs-give-blood is asyncio-native, built on aiohttp.
+  inject-websession:
+    status: done
+    comment: >-
+      The client takes a caller-owned session; the integration passes
+      async_get_clientsession(hass) and the library never creates or closes one.
+  strict-typing:
+    status: done
+    comment: >-
+      mypy strict over custom_components/nhs_give_blood with no ignores, and the
+      library ships py.typed.

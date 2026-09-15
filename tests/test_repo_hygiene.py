@@ -422,3 +422,165 @@ class TestScriptPortability:
         target = config["target-version"]
         assert target < "py314", f"scripts target {target}, which permits PEP 758 rewrites"
         assert config["extend"].endswith("pyproject.toml"), "should inherit the root rules"
+
+
+class TestQualityScale:
+    """`manifest.json` declares a tier, so the evidence must actually back it.
+
+    hassfest only validates `quality_scale.yaml` for core integrations, which means
+    nothing upstream stops a custom integration claiming platinum with an empty
+    file. These tests are what makes the declaration mean something here.
+    """
+
+    #: The rules Home Assistant defines per tier, as of the 2026.9 hassfest.
+    #: Hard-coded rather than fetched: a test that reaches the network fails
+    #: offline, and a silent drift is caught by the coverage assertion below when
+    #: someone next updates this list.
+    TIERS: dict[str, tuple[str, ...]] = {
+        "bronze": (
+            "action-setup",
+            "appropriate-polling",
+            "brands",
+            "common-modules",
+            "config-flow",
+            "config-flow-test-coverage",
+            "dependency-transparency",
+            "docs-actions",
+            "docs-conditions",
+            "docs-high-level-description",
+            "docs-installation-instructions",
+            "docs-removal-instructions",
+            "docs-triggers",
+            "entity-event-setup",
+            "entity-unique-id",
+            "has-entity-name",
+            "runtime-data",
+            "test-before-configure",
+            "test-before-setup",
+            "unique-config-entry",
+        ),
+        "silver": (
+            "action-exceptions",
+            "config-entry-unloading",
+            "docs-configuration-parameters",
+            "docs-installation-parameters",
+            "entity-unavailable",
+            "integration-owner",
+            "log-when-unavailable",
+            "parallel-updates",
+            "reauthentication-flow",
+            "test-coverage",
+        ),
+        "gold": (
+            "devices",
+            "diagnostics",
+            "discovery",
+            "discovery-update-info",
+            "docs-data-update",
+            "docs-examples",
+            "docs-known-limitations",
+            "docs-supported-devices",
+            "docs-supported-functions",
+            "docs-troubleshooting",
+            "docs-use-cases",
+            "dynamic-devices",
+            "entity-category",
+            "entity-device-class",
+            "entity-disabled-by-default",
+            "entity-translations",
+            "exception-translations",
+            "icon-translations",
+            "reconfiguration-flow",
+            "repair-issues",
+            "stale-devices",
+        ),
+        "platinum": ("async-dependency", "inject-websession", "strict-typing"),
+    }
+
+    VALID_STATUSES = {"done", "exempt", "todo"}
+
+    @pytest.fixture(scope="class")
+    def rules(self) -> dict[str, Any]:
+        import yaml
+
+        path = COMPONENT / "quality_scale.yaml"
+        assert path.is_file(), "manifest.json declares a tier, so this file must exist"
+        return yaml.safe_load(path.read_text())["rules"]
+
+    @pytest.fixture(scope="class")
+    def declared_tier(self) -> str:
+        return json.loads((COMPONENT / "manifest.json").read_text())["quality_scale"]
+
+    def test_every_official_rule_is_assessed(self, rules: dict[str, Any]) -> None:
+        expected = {rule for tier in self.TIERS.values() for rule in tier}
+        assert set(rules) == expected, f"drift: {set(rules) ^ expected}"
+
+    def test_statuses_are_valid(self, rules: dict[str, Any]) -> None:
+        invalid = {
+            name: entry.get("status") for name, entry in rules.items() if entry.get("status") not in self.VALID_STATUSES
+        }
+        assert not invalid, f"invalid statuses: {invalid}"
+
+    def test_exemptions_and_todos_are_justified(self, rules: dict[str, Any]) -> None:
+        """An unexplained exemption is indistinguishable from a shortcut."""
+        unjustified = [
+            name
+            for name, entry in rules.items()
+            if entry["status"] in {"exempt", "todo"} and not entry.get("comment", "").strip()
+        ]
+        assert not unjustified, f"exempt/todo without a reason: {unjustified}"
+
+    def test_the_declared_tier_is_actually_met(self, rules: dict[str, Any], declared_tier: str) -> None:
+        """Every rule up to and including the declared tier must be done or exempt."""
+        order = ["bronze", "silver", "gold", "platinum"]
+        assert declared_tier in order, f"unexpected tier {declared_tier!r}"
+
+        required: list[str] = []
+        for tier in order[: order.index(declared_tier) + 1]:
+            required.extend(self.TIERS[tier])
+
+        unmet = {name: rules[name]["status"] for name in required if rules[name]["status"] == "todo"}
+        assert not unmet, (
+            f"manifest.json claims {declared_tier!r} but these rules are todo: {unmet}. "
+            "Either implement them or lower the claim."
+        )
+
+    def test_higher_tiers_are_not_silently_claimed(self, rules: dict[str, Any], declared_tier: str) -> None:
+        """If every rule above the claim is met, the claim is understated."""
+        order = ["bronze", "silver", "gold", "platinum"]
+        above = order[order.index(declared_tier) + 1 :]
+        for tier in above:
+            statuses = {rules[name]["status"] for name in self.TIERS[tier]}
+            if "todo" in statuses:
+                return  # something above is genuinely incomplete; claim is right
+        if above:
+            pytest.fail(
+                f"every rule above {declared_tier!r} is done or exempt — the manifest could claim {above[-1]!r}"
+            )
+
+
+class TestParallelUpdates:
+    """A Silver rule, and easy to forget when adding a platform."""
+
+    PLATFORMS = ("sensor", "binary_sensor", "calendar")
+
+    @pytest.mark.parametrize("platform", PLATFORMS)
+    def test_platform_declares_parallel_updates(self, platform: str) -> None:
+        source = (COMPONENT / f"{platform}.py").read_text()
+        assert re.search(r"^PARALLEL_UPDATES\s*=\s*\d+", source, re.M), (
+            f"{platform}.py does not declare PARALLEL_UPDATES"
+        )
+
+    @pytest.mark.parametrize("platform", PLATFORMS)
+    def test_parallel_updates_is_zero(self, platform: str) -> None:
+        """Zero is correct: one coordinator fetch feeds every entity, and nothing writes."""
+        source = (COMPONENT / f"{platform}.py").read_text()
+        match = re.search(r"^PARALLEL_UPDATES\s*=\s*(\d+)", source, re.M)
+        assert match is not None
+        assert match.group(1) == "0"
+
+    def test_every_platform_in_const_is_covered(self) -> None:
+        """Catches a new platform added without the declaration."""
+        from custom_components.nhs_give_blood.const import PLATFORMS
+
+        assert {platform.value for platform in PLATFORMS} == set(self.PLATFORMS)

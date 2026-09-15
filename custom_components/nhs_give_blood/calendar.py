@@ -22,6 +22,11 @@ from .helpers import safe_datetime
 
 _LOGGER = logging.getLogger(__name__)
 
+# Read-only entities fed by a single coordinator fetch: there are no per-entity
+# requests to serialise, and no actions that could write. Home Assistant's
+# quality scale asks for this to be explicit rather than left to the default.
+PARALLEL_UPDATES = 0
+
 # The API gives a start time but no duration. A whole blood donation appointment
 # runs about an hour end to end; apheresis (platelets, plasma) runs longer. These
 # are the durations the app's own guidance quotes, used so the calendar block
