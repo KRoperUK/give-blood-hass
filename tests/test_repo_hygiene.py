@@ -240,3 +240,65 @@ class TestPiiGuard:
     def test_gitignore_excludes_credentials(self) -> None:
         patterns = {line.strip() for line in (REPO_ROOT / ".gitignore").read_text().splitlines()}
         assert ".env" in patterns or "*.env" in patterns
+
+
+class TestBrandAssets:
+    """HACS fails validation without brand assets or a brands-repository entry.
+
+    Rather than depend on a merged PR to home-assistant/brands, the assets ship
+    locally under ``custom_components/nhs_give_blood/brand/``, which is the
+    fallback HACS checks. Regenerate them with
+    ``python scripts/make_brand_assets.py``.
+    """
+
+    BRAND = COMPONENT / "brand"
+
+    REQUIRED = {
+        "icon.png": (256, 256),
+        "icon@2x.png": (512, 512),
+        "dark_icon.png": (256, 256),
+        "dark_icon@2x.png": (512, 512),
+        "logo.png": (512, 128),
+        "logo@2x.png": (1024, 256),
+        "dark_logo.png": (512, 128),
+        "dark_logo@2x.png": (1024, 256),
+    }
+
+    @pytest.mark.parametrize("name", sorted(REQUIRED))
+    def test_asset_exists_with_the_expected_dimensions(self, name: str) -> None:
+        from PIL import Image
+
+        path = self.BRAND / name
+        assert path.is_file(), f"{name} is missing; run scripts/make_brand_assets.py"
+        with Image.open(path) as image:
+            assert image.size == self.REQUIRED[name], f"{name} is {image.size}"
+
+    def test_assets_have_an_alpha_channel(self) -> None:
+        """Home Assistant composites these onto light and dark surfaces."""
+        from PIL import Image
+
+        for name in self.REQUIRED:
+            with Image.open(self.BRAND / name) as image:
+                assert image.mode == "RGBA", f"{name} is {image.mode}"
+
+    def test_svg_sources_are_committed(self) -> None:
+        """Artwork should be reviewable as text, not opaque binary history."""
+        sources = {path.name for path in (self.BRAND / "src").glob("*.svg")}
+        assert sources == {"icon.svg", "dark_icon.svg", "logo.svg", "dark_logo.svg"}
+
+    def test_artwork_avoids_protected_nhs_identity(self) -> None:
+        """This is an unofficial project.
+
+        Reusing the NHS logo, wordmark or the NHS blue (#005EB8) would be a
+        trademark problem and would imply endorsement that does not exist. The
+        mark is a plain droplet in a neutral crimson.
+        """
+        for path in (self.BRAND / "src").glob("*.svg"):
+            content = path.read_text().lower()
+            assert "005eb8" not in content, f"{path.name} uses the NHS blue"
+            assert "nhs" not in content, f"{path.name} references NHS identity"
+
+    def test_generator_script_is_executable_and_documented(self) -> None:
+        script = REPO_ROOT / "scripts" / "make_brand_assets.py"
+        assert script.is_file()
+        assert "rsvg-convert" in script.read_text(), "the dependency should be documented in the script"

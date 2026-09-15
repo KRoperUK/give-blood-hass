@@ -17,6 +17,8 @@ known-first-party = ["custom_components", "tests"]
 [tool.ruff.lint.per-file-ignores]
 # Tests use assert and synthetic credential literals by design.
 "tests/**" = ["S101", "S105", "S106", "S603", "S607"]
+# Maintainer scripts shell out to fixed, non-user-supplied commands.
+"scripts/**" = ["S603", "S607"]
 
 [tool.mypy]
 python_version = "3.14"
