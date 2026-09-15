@@ -63,6 +63,11 @@ Copy `custom_components/nhs_give_blood/` into your `config/custom_components/` d
 Requires Home Assistant 2026.8 or newer. The
 [`nhs-give-blood`](https://github.com/KRoperUK/give-blood-py) library is installed automatically.
 
+HACS only offers this to instances with their country set to the United Kingdom (`hacs.json` sets
+`country: GB`). NHS Blood and Transplant serves England and north Wales, so an account cannot be held
+from elsewhere — see [the installation guide](https://give-blood-hass.kroper.uk/installation/) for the
+detail.
+
 ## Set up
 
 **Settings → Devices & services → Add integration → NHS Give Blood**

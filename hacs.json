@@ -1,5 +1,6 @@
 {
   "name": "NHS Give Blood",
+  "country": "GB",
   "filename": "nhs_give_blood.zip",
   "zip_release": true,
   "hacs": "1.6.0",
