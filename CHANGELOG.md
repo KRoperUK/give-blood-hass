@@ -3,6 +3,13 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.1.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.1...v1.1.0) (2026-09-15)
+
+
+### Features
+
+* restrict the HACS listing to the United Kingdom ([#16](https://github.com/KRoperUK/give-blood-hass/issues/16)) ([356e9ac](https://github.com/KRoperUK/give-blood-hass/commit/356e9ac0752b8cdf57a660ce0872861cb70dfac7))
+
 ## [1.0.1](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.0...v1.0.1) (2026-09-15)
 
 
