@@ -4,6 +4,21 @@
 
 - Home Assistant **2026.8.0** or newer
 - An NHS Give Blood account (the same one you use in the app)
+- A Home Assistant instance with its country set to the United Kingdom
+
+!!! info "Why the country restriction"
+
+    `hacs.json` sets `country: GB`, so HACS only offers this integration to instances
+    configured for the United Kingdom. NHS Blood and Transplant serves England and
+    north Wales, and there is no way to hold an account from elsewhere — listing it
+    worldwide would put it in front of people who could never use it.
+
+    Scotland, the rest of Wales and Northern Ireland have separate services (SNBTS,
+    the Welsh Blood Service and NIBTS) which this integration does not talk to. `GB`
+    is the closest available code: ISO 3166-1 alpha-2 has no sub-UK subdivisions.
+
+    Your country is set under **Settings → System → General**. Manual installation
+    bypasses the restriction, but the API will not have an account for you.
 
 The [`nhs-give-blood`](https://github.com/KRoperUK/give-blood-py) library is installed automatically by
 Home Assistant from `manifest.json`.

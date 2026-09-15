@@ -584,3 +584,58 @@ class TestParallelUpdates:
         from custom_components.nhs_give_blood.const import PLATFORMS
 
         assert {platform.value for platform in PLATFORMS} == set(self.PLATFORMS)
+
+
+class TestHacsManifest:
+    """`hacs.json` controls what HACS shows and to whom."""
+
+    @pytest.fixture(scope="class")
+    def hacs(self) -> dict[str, Any]:
+        return json.loads((REPO_ROOT / "hacs.json").read_text())
+
+    #: Keys HACS documents. Anything else is silently ignored, which is worse than
+    #: an error because it looks like it took effect.
+    SUPPORTED_KEYS = {
+        "name",
+        "content_in_root",
+        "zip_release",
+        "filename",
+        "hide_default_branch",
+        "country",
+        "homeassistant",
+        "hacs",
+        "persistent_directory",
+    }
+
+    def test_only_supported_keys(self, hacs: dict[str, Any]) -> None:
+        unknown = set(hacs) - self.SUPPORTED_KEYS
+        assert not unknown, f"HACS ignores unknown keys silently: {unknown}"
+
+    def test_zip_release_declares_a_filename(self, hacs: dict[str, Any]) -> None:
+        """HACS requires `filename` alongside `zip_release`, or the install fails."""
+        if hacs.get("zip_release"):
+            assert hacs.get("filename"), "zip_release needs filename"
+
+    def test_restricted_to_the_united_kingdom(self, hacs: dict[str, Any]) -> None:
+        """NHS Blood and Transplant serves England and north Wales only.
+
+        Offering the integration worldwide would put it in front of people who can
+        never have an account. `GB` is the closest ISO 3166-1 alpha-2 code — the
+        standard has no sub-UK subdivisions, and the other UK nations have separate
+        services (SNBTS, Welsh Blood Service, NIBTS) that this does not talk to.
+        """
+        assert hacs.get("country") == "GB"
+
+    def test_country_is_a_real_iso_3166_1_alpha_2_code(self, hacs: dict[str, Any]) -> None:
+        """`UK` is the obvious guess and is not a valid code; the UK is `GB`."""
+        country = hacs.get("country")
+        codes = [country] if isinstance(country, str) else list(country or [])
+        for code in codes:
+            assert re.fullmatch(r"[A-Z]{2}", code), f"{code!r} is not alpha-2 uppercase"
+            assert code != "UK", "the United Kingdom is 'GB' in ISO 3166-1 alpha-2"
+
+    def test_home_assistant_floor_matches_the_documented_one(self, hacs: dict[str, Any]) -> None:
+        """The floor users are gated on must match what the docs promise."""
+        installation = (REPO_ROOT / "docs" / "installation.md").read_text()
+        floor = hacs["homeassistant"]
+        assert ".".join(floor.split(".")[:2]) in installation
