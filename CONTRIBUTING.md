@@ -57,6 +57,18 @@ bash scripts/package-hacs-zip.sh
 CI additionally runs HACS validation and hassfest, both of which are release blockers because releases
 ship as a zip asset.
 
+### The `preflight` job
+
+`typecheck`, `pre-commit` and `test` all install
+[`nhs-give-blood`](https://github.com/KRoperUK/give-blood-py) from PyPI, so they cannot run until the
+floor pinned in `manifest.json` has actually been published. The `preflight` job checks that first and
+skips the three rather than letting them fail with an opaque pip resolution error.
+
+If you see `preflight` red with *"Nothing on PyPI satisfies …"*, the library release has not caught up
+with the floor. Either publish it, or lower the floor in **both** `manifest.json` and
+`requirements_dev.txt` — the check asserts they agree, because Home Assistant installs one at runtime
+and CI installs the other, and drift means testing something users never get.
+
 ## Testing approach
 
 Tests patch `GiveBloodApiClient` (the adapter), not HTTP. The library has its own suite covering
