@@ -3,6 +3,13 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.0.1](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.0...v1.0.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* declare PARALLEL_UPDATES and back the silver quality-scale claim ([#12](https://github.com/KRoperUK/give-blood-hass/issues/12)) ([6a00ca2](https://github.com/KRoperUK/give-blood-hass/commit/6a00ca21afea61b24706c8d090bf2f466a1853ff))
+
 ## [1.0.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.0...v1.0.0) (2026-09-15)
 
 
