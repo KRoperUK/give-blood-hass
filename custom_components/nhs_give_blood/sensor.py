@@ -44,6 +44,11 @@ from .helpers import limit_attributes, safe_datetime, safe_number, safe_state
 
 _LOGGER = logging.getLogger(__name__)
 
+# Read-only entities fed by a single coordinator fetch: there are no per-entity
+# requests to serialise, and no actions that could write. Home Assistant's
+# quality scale asks for this to be explicit rather than left to the default.
+PARALLEL_UPDATES = 0
+
 
 @dataclass(frozen=True, kw_only=True)
 class GiveBloodSensorEntityDescription(SensorEntityDescription):
