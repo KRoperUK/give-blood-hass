@@ -23,6 +23,10 @@ known-first-party = ["custom_components", "tests"]
 # Tests use assert and synthetic credential literals by design.
 "tests/**" = ["S101", "S105", "S106", "S603", "S607"]
 # Maintainer scripts shell out to fixed, non-user-supplied commands.
+#
+# Their language target is pinned separately in scripts/.ruff.toml, because the
+# *formatter* honours target-version and at py314 rewrites `except (A, B):` into
+# PEP 758 syntax that older interpreters cannot parse.
 "scripts/**" = ["S603", "S607"]
 
 [tool.mypy]

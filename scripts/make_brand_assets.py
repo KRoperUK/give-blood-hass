@@ -66,10 +66,12 @@ def _logo_svg(*, drop: str, text: str, background: str | None) -> str:
     optically centred. Hand-computed rather than eyeballed, because a wordmark
     that clips or overlaps at 512px looks worse than no logo at all.
     """
-    backdrop = f'<rect width="1024" height="256" fill="{background}"/>' if background else ""
+    # Built as a line list rather than interpolated into one template: an empty
+    # backdrop left a whitespace-only line, so the generator and pre-commit's
+    # trailing-whitespace hook kept undoing each other.
+    backdrop = f'  <rect width="1024" height="256" fill="{background}"/>\n' if background else ""
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 256" width="1024" height="256">
-  {backdrop}
-  <g transform="translate(-93.6, -39.2) scale(0.7)">
+{backdrop}  <g transform="translate(-93.6, -39.2) scale(0.7)">
     <path d="{_DROPLET}" fill="{drop}"/>
   </g>
   <text x="182" y="176" font-family="Helvetica, Arial, sans-serif" font-size="128"

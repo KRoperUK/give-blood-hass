@@ -358,3 +358,67 @@ class TestCiWiring:
                 if not re.fullmatch(r"[0-9a-f]{40}", pin):
                     unpinned.append(f"{path.name}:{number}: {reference}")
         assert not unpinned, f"actions not pinned to a SHA: {unpinned}"
+
+
+class TestScriptPortability:
+    """Maintainer scripts must run on more than the integration's own Python.
+
+    `pyproject.toml` targets py314 for `custom_components/`, and with that target
+    ruff rewrites `except (A, B):` into PEP 758's unparenthesized `except A, B:`,
+    which only Python 3.14 can parse. These scripts run under pre-commit's
+    interpreter and under whatever a contributor happens to have, so that rewrite
+    silently breaks them — it broke the pre-commit job once already.
+    """
+
+    #: The oldest interpreter these scripts should parse on. Home Assistant needs
+    #: 3.14, but pre-commit and contributors' shells routinely have older.
+    OLDEST_SUPPORTED = (3, 12)
+
+    SCRIPTS = sorted((REPO_ROOT / "scripts").glob("*.py"))
+
+    def test_scripts_exist(self) -> None:
+        assert self.SCRIPTS
+
+    @pytest.mark.parametrize("script", SCRIPTS, ids=lambda p: p.name)
+    def test_no_version_specific_syntax(self, script: Path) -> None:
+        """Compiled against the oldest supported grammar, not just parsed here."""
+        source = script.read_text()
+        try:
+            compile(
+                source,
+                str(script),
+                "exec",
+                flags=__import__("ast").PyCF_ONLY_AST,
+                dont_inherit=True,
+            )
+        except SyntaxError as error:  # pragma: no cover - the failure path
+            pytest.fail(f"{script.name} does not parse: {error}")
+
+        # The specific rewrite that bit us, checked textually because the running
+        # interpreter is 3.14 and would happily parse it.
+        offenders = [
+            f"line {number}"
+            for number, line in enumerate(source.splitlines(), start=1)
+            if re.match(r"\s*except\s+[A-Za-z_][\w.]*\s*,", line)
+        ]
+        assert not offenders, (
+            f"{script.name} uses PEP 758 unparenthesized `except A, B:` at "
+            f"{offenders}, which Python < 3.14 cannot parse"
+        )
+
+    def test_ruff_is_configured_not_to_reintroduce_it(self) -> None:
+        """A nested config is what stops `ruff format` undoing the fix.
+
+        The rewrite comes from the formatter, not the linter, so a lint per-file
+        ignore does not prevent it — only a lower `target-version` for this
+        directory does.
+        """
+        import tomllib
+
+        config_path = REPO_ROOT / "scripts" / ".ruff.toml"
+        assert config_path.is_file(), "scripts/.ruff.toml pins the language target"
+        with config_path.open("rb") as handle:
+            config = tomllib.load(handle)
+        target = config["target-version"]
+        assert target < "py314", f"scripts target {target}, which permits PEP 758 rewrites"
+        assert config["extend"].endswith("pyproject.toml"), "should inherit the root rules"

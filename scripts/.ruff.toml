@@ -1,0 +1,19 @@
+# Ruff configuration for maintainer scripts only.
+#
+# The repository root targets py314, because that is what Home Assistant 2026.8+
+# requires and what `custom_components/` runs on. The *formatter* honours
+# target-version too: at py314 it rewrites `except (A, B):` into PEP 758's
+# unparenthesized `except A, B:`, which no interpreter before 3.14 can parse.
+#
+# These scripts do not run on the integration's interpreter. They run under
+# pre-commit's environment and under whatever a contributor happens to have, so a
+# 3.14-only rewrite silently breaks them — it broke the pre-commit job once, with
+# a SyntaxError that looked like file corruption rather than a formatter decision.
+#
+# `extend` inherits everything else (line length, rule selection, per-file
+# ignores) from the root configuration, so only the language target differs.
+extend = "../pyproject.toml"
+
+# Matches the client library's floor, which is the oldest Python either project
+# claims to support.
+target-version = "py312"

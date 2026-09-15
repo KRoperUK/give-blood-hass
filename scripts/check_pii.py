@@ -239,7 +239,7 @@ def scan_file(path: Path) -> list[tuple[int, str]]:
     """Return ``(line_number, finding)`` pairs for a file."""
     try:
         text = path.read_text(encoding="utf-8")
-    except UnicodeDecodeError, OSError:
+    except (UnicodeDecodeError, OSError):
         return []
     results: list[tuple[int, str]] = []
     for number, line in enumerate(text.splitlines(), start=1):
