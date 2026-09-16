@@ -332,6 +332,10 @@ class TestReconfigureFlow:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_USERNAME: TEST_USERNAME, CONF_PASSWORD: "a-new-password"}
         )
+        # Drains the reload this schedules. Without it the reload lands after the
+        # test body, and the coordinator it sets up leaves a refresh timer behind
+        # for the teardown check to trip over.
+        await hass.async_block_till_done()
 
         assert result["type"] is FlowResultType.ABORT
         assert result["reason"] == "reconfigure_successful"
