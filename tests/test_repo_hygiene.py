@@ -15,6 +15,7 @@ import json
 import re
 import subprocess
 import sys
+import urllib.parse
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -308,14 +309,15 @@ class TestCiWiring:
     """Guards on the CI graph itself, which nothing else would catch."""
 
     @pytest.fixture(scope="class")
-    def workflow(self) -> dict[str, Any]:
+    @staticmethod
+    def workflow() -> dict[str, Any]:
         import yaml
 
         return yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text())
 
     #: Jobs that `pip install -r requirements_test.txt`, and so cannot run until
     #: the pinned client-library floor exists on PyPI.
-    LIBRARY_DEPENDENT = ("typecheck", "pre-commit", "test")
+    LIBRARY_DEPENDENT = ("typecheck", "pre-commit", "test", "test-floor")
 
     def test_preflight_job_exists(self, workflow: dict[str, Any]) -> None:
         assert "preflight" in workflow["jobs"]
@@ -331,6 +333,24 @@ class TestCiWiring:
         """A check nobody gates on is decoration."""
         assert "preflight" in workflow["jobs"]["ci"]["needs"]
         assert "preflight=" in workflow["jobs"]["ci"]["steps"][0]["run"]
+
+    def test_the_floor_leg_keeps_its_pairing(self, workflow: dict[str, Any]) -> None:
+        """The floor job only tests the floor while it pins phacc to it.
+
+        Without the pin it would install requirements_test.txt's floor, which
+        resolves to the newest Home Assistant — the same thing the `test` job
+        already does, under a name that claims otherwise.
+        """
+        assert "test-floor" in workflow["jobs"], "the 2026.8.0 floor has no CI leg"
+        assert "test-floor" in workflow["jobs"]["ci"]["needs"]
+        assert "test-floor=" in workflow["jobs"]["ci"]["steps"][0]["run"]
+
+        pins = [
+            step["run"]
+            for step in workflow["jobs"]["test-floor"]["steps"]
+            if "pytest-homeassistant-custom-component==" in step.get("run", "")
+        ]
+        assert pins, "the floor leg must pin the phacc release paired with the declared floor"
 
     def test_preflight_script_exists_and_is_syntactically_valid(self) -> None:
         script = REPO_ROOT / "scripts" / "check-library-published.sh"
@@ -500,7 +520,8 @@ class TestQualityScale:
     VALID_STATUSES = {"done", "exempt", "todo"}
 
     @pytest.fixture(scope="class")
-    def rules(self) -> dict[str, Any]:
+    @staticmethod
+    def rules() -> dict[str, Any]:
         import yaml
 
         path = COMPONENT / "quality_scale.yaml"
@@ -508,7 +529,8 @@ class TestQualityScale:
         return yaml.safe_load(path.read_text())["rules"]
 
     @pytest.fixture(scope="class")
-    def declared_tier(self) -> str:
+    @staticmethod
+    def declared_tier() -> str:
         return json.loads((COMPONENT / "manifest.json").read_text())["quality_scale"]
 
     def test_every_official_rule_is_assessed(self, rules: dict[str, Any]) -> None:
@@ -590,7 +612,8 @@ class TestHacsManifest:
     """`hacs.json` controls what HACS shows and to whom."""
 
     @pytest.fixture(scope="class")
-    def hacs(self) -> dict[str, Any]:
+    @staticmethod
+    def hacs() -> dict[str, Any]:
         return json.loads((REPO_ROOT / "hacs.json").read_text())
 
     #: Keys HACS documents. Anything else is silently ignored, which is worse than
@@ -639,3 +662,61 @@ class TestHacsManifest:
         installation = (REPO_ROOT / "docs" / "installation.md").read_text()
         floor = hacs["homeassistant"]
         assert ".".join(floor.split(".")[:2]) in installation
+
+
+class TestReadmeHacsButton:
+    """The "Open in HACS" badge is a one-click install path.
+
+    It is also one character away from a silent failure: a typo in `owner` or
+    `repository` still renders the badge and still opens the reader's own HACS,
+    which then reports that it cannot find the repository. Nothing else in the
+    repo would notice, so the coordinates are checked against the actual git
+    remote rather than against a second copy of the same string.
+    """
+
+    README = REPO_ROOT / "README.md"
+    BADGE = "https://my.home-assistant.io/badges/hacs_repository.svg"
+    _REDIRECT = re.compile(r"\((https://my\.home-assistant\.io/redirect/hacs_repository/?\?[^)]+)\)")
+
+    @pytest.fixture(scope="class")
+    @staticmethod
+    def readme() -> str:
+        return TestReadmeHacsButton.README.read_text()
+
+    def _redirects(self, readme: str) -> list[dict[str, list[str]]]:
+        urls = self._REDIRECT.findall(readme)
+        assert urls, "no my.home-assistant.io HACS redirect link found in the README"
+        return [urllib.parse.parse_qs(urllib.parse.urlparse(url).query) for url in urls]
+
+    @staticmethod
+    def _repo_coordinates() -> tuple[str, str]:
+        """Owner and repository name, from the git remote rather than the README."""
+        result = subprocess.run(
+            ["git", "config", "--get", "remote.origin.url"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        remote = result.stdout.strip()
+        if not remote:
+            pytest.skip("no git remote to check the badge against")
+        path = remote.split(":", 1)[-1] if remote.startswith("git@") else urllib.parse.urlparse(remote).path
+        owner, _, repository = path.lstrip("/").removesuffix(".git").partition("/")
+        return owner, repository
+
+    def test_the_badge_is_present_and_linked(self, readme: str) -> None:
+        assert self.BADGE in readme
+        self._redirects(readme)
+
+    def test_every_redirect_points_at_this_repository(self, readme: str) -> None:
+        """Covers both placements — the header badge and the Install section."""
+        owner, repository = self._repo_coordinates()
+        for query in self._redirects(readme):
+            assert query.get("owner") == [owner], f"badge owner is not {owner!r}"
+            assert query.get("repository") == [repository], f"badge repository is not {repository!r}"
+
+    def test_every_redirect_selects_the_integration_category(self, readme: str) -> None:
+        """HACS offers the same repository under several categories; only one installs."""
+        for query in self._redirects(readme):
+            assert query.get("category") == ["integration"]
