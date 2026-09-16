@@ -46,7 +46,7 @@ If a finding is genuinely safe, add a `pii-allow` comment to that line — and s
 ## Checks
 
 ```bash
-pytest                                        # 194 tests, 80% coverage floor
+pytest                                        # 263 tests, 80% coverage floor
 ruff check . && ruff format --check .
 mypy                                          # strict
 bandit -c bandit.yaml -r custom_components
@@ -59,15 +59,35 @@ ship as a zip asset.
 
 ### The `preflight` job
 
-`typecheck`, `pre-commit` and `test` all install
+`typecheck`, `pre-commit`, `test` and `test-floor` all install
 [`nhs-give-blood`](https://github.com/KRoperUK/give-blood-py) from PyPI, so they cannot run until the
 floor pinned in `manifest.json` has actually been published. The `preflight` job checks that first and
-skips the three rather than letting them fail with an opaque pip resolution error.
+skips them rather than letting them fail with an opaque pip resolution error.
 
 If you see `preflight` red with *"Nothing on PyPI satisfies …"*, the library release has not caught up
 with the floor. Either publish it, or lower the floor in **both** `manifest.json` and
 `requirements_dev.txt` — the check asserts they agree, because Home Assistant installs one at runtime
 and CI installs the other, and drift means testing something users never get.
+
+### The `test-floor` job
+
+`hacs.json` and `manifest.json` declare Home Assistant **2026.8.0** as the minimum, and before this job
+nothing tested it. `pytest-homeassistant-custom-component` pins the Home Assistant release it is built
+against, so `requirements_test.txt`'s floor resolves to the *newest* Home Assistant: every other job has
+only ever run against that, which made the floor an assertion rather than a verified fact.
+
+The job installs `pytest-homeassistant-custom-component==0.13.354` — the last release paired with exactly
+`homeassistant==2026.8.0`; `0.13.355` moved on to 2026.8.1 — then asserts the installed Home Assistant
+really is 2026.8.x before running the suite. That assertion is the point: if the pin stops resolving to
+the floor, the leg fails loudly instead of quietly re-testing the newest release under a floor's name.
+
+**The mapping needs maintaining.** When the support window moves, find the phacc release that pairs with
+the new floor and update the pin in `.github/workflows/ci.yml`:
+
+```bash
+curl -s https://pypi.org/pypi/pytest-homeassistant-custom-component/0.13.354/json \
+  | python -c "import json,sys; print([d for d in json.load(sys.stdin)['info']['requires_dist'] if d.startswith('homeassistant')])"
+```
 
 ## Testing approach
 

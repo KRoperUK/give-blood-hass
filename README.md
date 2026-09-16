@@ -3,6 +3,7 @@
 Brings your NHS blood donation account into Home Assistant: appointments, eligibility dates, donation
 credits and awards.
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=KRoperUK&repository=give-blood-hass&category=integration)
 [![Docs](https://img.shields.io/badge/docs-give--blood--hass.kroper.uk-c8102e)](https://give-blood-hass.kroper.uk)
 [![HACS](https://img.shields.io/badge/HACS-custom-orange)](https://hacs.xyz)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8%2B-blue)](https://www.home-assistant.io)
@@ -51,6 +52,11 @@ time.
 ## Install
 
 ### HACS
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=KRoperUK&repository=give-blood-hass&category=integration)
+
+Already running HACS? The button above opens it on your own instance with this repository and the
+**Integration** category pre-filled. Otherwise add it by hand:
 
 1. HACS → three-dot menu → **Custom repositories**
 2. Add `https://github.com/KRoperUK/give-blood-hass`, category **Integration**

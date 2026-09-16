@@ -47,13 +47,21 @@ def _is_eligible(snapshot: DonorSnapshot) -> bool | None:
     """Whether the donor is past their clinical deferral date.
 
     Compared date-to-date, not instant-to-instant: the API returns a midnight
-    boundary, so comparing full timestamps would report "not eligible" for the
-    whole of the eligible day.
+    boundary, so comparing full timestamps would report "not eligible" for the whole
+    of the eligible day.
+
+    Both sides are converted into the *eligibility date's own* timezone first. That
+    is Europe/London — NHSBT's dates are venue-local — whereas ``dt_util.now()``
+    returns time in Home Assistant's configured timezone. Taking ``.date()`` of each
+    without aligning them is wrong by up to a day for any instance not set to London,
+    and wrong for everyone during the hour after London midnight in summer. Which is
+    the same off-by-one this function comparing dates was meant to avoid.
     """
     eligible_from = snapshot.account.can_donate_from
     if eligible_from is None:
         return None
-    return dt_util.now().date() >= eligible_from.date()
+    now_there = dt_util.now().astimezone(eligible_from.tzinfo)
+    return now_there.date() >= eligible_from.date()
 
 
 def _booking_system_problem(snapshot: DonorSnapshot) -> bool | None:

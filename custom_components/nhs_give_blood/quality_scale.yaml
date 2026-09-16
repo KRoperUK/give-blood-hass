@@ -6,10 +6,11 @@
 # claim at all.
 #
 # Declared tier: silver. Every Bronze and Silver rule below is done or exempt.
-# Gold is deliberately not claimed: `reconfiguration-flow` and
-# `exception-translations` are genuinely not implemented, and both are noted as
-# todo rather than argued away. All three Platinum rules are met, but Platinum is
-# not claimed while Gold is incomplete.
+# Gold is deliberately not claimed: `exception-translations` is genuinely not
+# implemented — there is nothing to translate while the integration is read-only,
+# and no action can fail in front of a user — so it is noted as todo rather than
+# argued away. All three Platinum rules are met, but Platinum is not claimed while
+# Gold is incomplete.
 rules:
   # --- Bronze ---
   action-setup:
@@ -254,11 +255,15 @@ rules:
       icons.json covers every entity, with state-specific icons on the binary
       sensors. A hygiene test enforces coverage.
   reconfiguration-flow:
-    status: todo
+    status: done
     comment: >-
-      Not implemented. Credentials can be changed through the reauth flow and both
-      options through the options flow, so the gap is narrow, but it is a real gap
-      rather than an exemption.
+      async_step_reconfigure, giving the standard Reconfigure option in the
+      entry's overflow menu, so credentials can be changed deliberately rather
+      than only reactively after an authentication failure. It validates the new
+      credentials before saving, pre-fills the email address, reloads the entry,
+      and refuses a different donor account through the same guard the reauth flow
+      uses — reconfigure is precisely where someone is most likely to paste
+      another account's details.
   repair-issues:
     status: exempt
     comment: >-

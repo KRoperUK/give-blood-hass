@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
 
-from homeassistant.config_entries import SOURCE_REAUTH, SOURCE_USER
+from homeassistant.config_entries import SOURCE_REAUTH, SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -201,6 +201,140 @@ class TestReauthFlow:
         result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
 
         assert result["errors"] == {"base": "unknown"}
+
+
+class TestReconfigureFlow:
+    """Changing credentials deliberately, rather than waiting for a rejection.
+
+    Mirrors the reauth coverage on purpose: the two flows write the same three
+    things into the entry, and the wrong-account guard is now shared between
+    them, so a gap in one is a gap in both.
+    """
+
+    async def _start_reconfigure(self, hass: HomeAssistant, entry: MockConfigEntry) -> dict:
+        return await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id},
+        )
+
+    @staticmethod
+    def _suggested(schema: object, field: str) -> object:
+        """The value pre-filled for ``field`` in a rendered flow schema.
+
+        Home Assistant attaches this to the marker's ``description``, not its
+        ``default`` — a distinction that matters, since a *default* would be
+        submitted by a client that sends an empty form.
+        """
+        for marker in schema.schema:  # type: ignore[attr-defined]
+            if marker.schema == field:
+                return (marker.description or {}).get("suggested_value")
+        raise AssertionError(f"{field} is not in the schema")
+
+    async def test_shows_the_form_first(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        config_entry.add_to_hass(hass)
+        result = await self._start_reconfigure(hass, config_entry)
+
+        assert result["type"] is FlowResultType.FORM
+        assert result["step_id"] == "reconfigure"
+
+    async def test_prefills_the_stored_email_address(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        """The email is the field someone changing a password is least likely to change."""
+        config_entry.add_to_hass(hass)
+        result = await self._start_reconfigure(hass, config_entry)
+
+        assert self._suggested(result["data_schema"], CONF_USERNAME) == TEST_USERNAME
+        assert self._suggested(result["data_schema"], CONF_PASSWORD) is None
+
+    async def test_updates_credentials_and_tokens(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        config_entry.add_to_hass(hass)
+        new_tokens = make_tokens()
+        mock_api.token_data = new_tokens
+
+        result = await self._start_reconfigure(hass, config_entry)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_USERNAME: TEST_USERNAME, CONF_PASSWORD: "a-new-password"}
+        )
+        await hass.async_block_till_done()
+
+        assert result["type"] is FlowResultType.ABORT
+        assert result["reason"] == "reconfigure_successful"
+        assert config_entry.data[CONF_PASSWORD] == "a-new-password"
+        assert config_entry.data[CONF_TOKENS] == new_tokens
+
+    async def test_rejects_credentials_for_a_different_account(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        """Reconfigure is exactly where someone is most likely to paste another account."""
+        config_entry.add_to_hass(hass)
+        mock_api.async_validate = AsyncMock(return_value="D0000009")  # pii-allow - synthetic other account
+        original = dict(config_entry.data)
+
+        result = await self._start_reconfigure(hass, config_entry)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_USERNAME: "other@example.invalid", CONF_PASSWORD: TEST_PASSWORD}
+        )
+
+        assert result["type"] is FlowResultType.ABORT
+        assert result["reason"] == "wrong_account"
+        assert dict(config_entry.data) == original, "a refused reconfigure must not write anything"
+
+    async def test_surfaces_invalid_auth(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        config_entry.add_to_hass(hass)
+        mock_api.async_validate = AsyncMock(side_effect=InvalidAuth("still wrong"))
+
+        result = await self._start_reconfigure(hass, config_entry)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+
+        assert result["type"] is FlowResultType.FORM
+        assert result["errors"] == {"base": "invalid_auth"}
+
+    async def test_surfaces_cannot_connect(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        config_entry.add_to_hass(hass)
+        mock_api.async_validate = AsyncMock(side_effect=CannotConnect("down"))
+
+        result = await self._start_reconfigure(hass, config_entry)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+
+        assert result["errors"] == {"base": "cannot_connect"}
+
+    async def test_surfaces_unexpected_errors(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        config_entry.add_to_hass(hass)
+        mock_api.async_validate = AsyncMock(side_effect=RuntimeError("boom"))
+
+        result = await self._start_reconfigure(hass, config_entry)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+
+        assert result["errors"] == {"base": "unknown"}
+
+    async def test_recovers_after_a_failed_attempt(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        config_entry.add_to_hass(hass)
+        mock_api.async_validate = AsyncMock(side_effect=InvalidAuth("nope"))
+
+        result = await self._start_reconfigure(hass, config_entry)
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+        assert result["errors"] == {"base": "invalid_auth"}
+
+        mock_api.async_validate = AsyncMock(return_value=DONOR_ID)
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_USERNAME: TEST_USERNAME, CONF_PASSWORD: "a-new-password"}
+        )
+
+        assert result["type"] is FlowResultType.ABORT
+        assert result["reason"] == "reconfigure_successful"
 
 
 class TestOptionsFlow:

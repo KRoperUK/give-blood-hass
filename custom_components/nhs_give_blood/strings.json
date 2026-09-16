@@ -16,6 +16,14 @@
           "username": "Email address",
           "password": "Password"
         }
+      },
+      "reconfigure": {
+        "title": "Change NHS Give Blood credentials",
+        "description": "Sign in with the account this entry was set up with. The email address is pre-filled; the password always has to be entered again.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -25,6 +33,7 @@
     },
     "abort": {
       "already_configured": "This donor account is already set up.",
+      "reconfigure_successful": "Credentials updated, and NHS Give Blood has been reloaded.",
       "reauth_successful": "Reconnected to NHS Give Blood.",
       "wrong_account": "Those credentials are for a different donor account. Sign in with the account this entry was originally set up with, or add the other account separately."
     }

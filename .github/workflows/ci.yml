@@ -153,6 +153,46 @@ jobs:
       - run: pip install -r requirements_test.txt
       - run: pytest tests/ --cov=custom_components/nhs_give_blood --cov-report=xml -v
 
+  # `hacs.json` and `manifest.json` claim Home Assistant 2026.8.0 as the minimum,
+  # and nothing above tests it: pytest-homeassistant-custom-component pins the
+  # Home Assistant release it is built against, so requirements_test.txt's floor
+  # resolves to the *newest* HA and the `test` job has only ever run against that.
+  # Someone on 2026.8.x installing from HACS would otherwise be the first to find
+  # out if the claim is wrong.
+  #
+  # The awkward part is the mapping, and it needs revisiting whenever the support
+  # window moves: testing 2026.8.0 means installing the phacc release paired with
+  # it, not the floor in requirements_test.txt.
+  test-floor:
+    needs: [changes, preflight]
+    if: needs.changes.outputs.component == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install -r requirements_test.txt
+      - name: Pin the pairing for Home Assistant 2026.8.0
+        # 0.13.355 moved on to 2026.8.1, so 0.13.354 is the last release paired
+        # with exactly the floor this integration declares.
+        run: pip install "pytest-homeassistant-custom-component==0.13.354"
+      - name: Assert the floor pairing is what actually installed
+        # Verifies the mapping itself rather than trusting it. If phacc ever
+        # drops 2026.8.0, or this pin stops resolving to it, the leg fails loudly
+        # instead of quietly re-testing the newest release under a floor's name.
+        run: |
+          python - <<'PY'
+          import sys
+
+          from homeassistant.const import __version__
+
+          if not __version__.startswith("2026.8."):
+              sys.exit(f"the floor leg must run Home Assistant 2026.8.x, got {__version__}")
+          print(f"Floor leg is running Home Assistant {__version__}")
+          PY
+      - run: pytest tests/ -v
+
   validate:
     needs: changes
     if: needs.changes.outputs.component == 'true'
@@ -201,7 +241,7 @@ jobs:
 
   # Single required status check. Passes automatically on docs-only changes.
   ci:
-    needs: [changes, preflight, lint, typecheck, security, pre-commit, test, validate, scripts, docs]
+    needs: [changes, preflight, lint, typecheck, security, pre-commit, test, test-floor, validate, scripts, docs]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -224,6 +264,7 @@ jobs:
             "security=${{ needs.security.result }}" \
             "pre-commit=${{ needs['pre-commit'].result }}" \
             "test=${{ needs.test.result }}" \
+            "test-floor=${{ needs['test-floor'].result }}" \
             "validate=${{ needs.validate.result }}" \
             "scripts=${{ needs.scripts.result }}"
           do

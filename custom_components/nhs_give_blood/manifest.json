@@ -15,7 +15,7 @@
   ],
   "quality_scale": "silver",
   "requirements": [
-    "nhs-give-blood>=0.1.0"
+    "nhs-give-blood>=0.2.0"
   ],
   "version": "1.1.0"
 }
