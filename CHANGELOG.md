@@ -3,6 +3,13 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.2.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.1.0...v1.2.0) (2026-09-16)
+
+
+### Features
+
+* reconfigure flow, an Open in HACS button, and a verified HA floor ([#22](https://github.com/KRoperUK/give-blood-hass/issues/22)) ([099832a](https://github.com/KRoperUK/give-blood-hass/commit/099832a9d0bc7ec9dfd334547c6478124dedfd44))
+
 ## [1.1.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.0.1...v1.1.0) (2026-09-15)
 
 
