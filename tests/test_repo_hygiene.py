@@ -285,19 +285,20 @@ class TestBrandAssets:
     def test_svg_sources_are_committed(self) -> None:
         """Artwork should be reviewable as text, not opaque binary history."""
         sources = {path.name for path in (self.BRAND / "src").glob("*.svg")}
-        assert sources == {"icon.svg", "dark_icon.svg", "logo.svg", "dark_logo.svg"}
+        assert sources == {"icon.svg", "dark_icon.svg", "logo.svg", "dark_logo.svg", "official-logo.svg"}
 
-    def test_artwork_avoids_protected_nhs_identity(self) -> None:
-        """This is an unofficial project.
+    def test_official_artwork_sources_are_recorded(self) -> None:
+        """The lockup and app icon are official NHSBT artwork.
 
-        Reusing the NHS logo, wordmark or the NHS blue (#005EB8) would be a
-        trademark problem and would imply endorsement that does not exist. The
-        mark is a plain droplet in a neutral crimson.
+        It identifies the service the integration talks to — the established
+        custom-integration convention — not an NHS endorsement. The generator
+        script must keep saying where each source was published, so a future
+        re-export can be checked against the originals.
         """
-        for path in (self.BRAND / "src").glob("*.svg"):
-            content = path.read_text().lower()
-            assert "005eb8" not in content, f"{path.name} uses the NHS blue"
-            assert "nhs" not in content, f"{path.name} references NHS identity"
+        script = (REPO_ROOT / "scripts" / "make_brand_assets.py").read_text()
+        assert "blood.co.uk" in script, "logo source is not documented"
+        assert "App Store" in script, "app icon source is not documented"
+        assert (self.BRAND / "src" / "official-logo.svg").is_file()
 
     def test_generator_script_is_executable_and_documented(self) -> None:
         script = REPO_ROOT / "scripts" / "make_brand_assets.py"
