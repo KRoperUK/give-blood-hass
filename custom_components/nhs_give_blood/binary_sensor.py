@@ -5,13 +5,20 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.components.binary_sensor.const import BinarySensorDeviceClass
+
+if TYPE_CHECKING:  # Newer Home Assistant: device classes live in const.
+    from homeassistant.components.binary_sensor.const import BinarySensorDeviceClass
+else:
+    try:
+        from homeassistant.components.binary_sensor.const import BinarySensorDeviceClass
+    except ImportError:  # Older floor re-exports it from the package.
+        from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback

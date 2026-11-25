@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import probatio as vol
+if TYPE_CHECKING:  # Newer Home Assistant: schemas moved to probatio.
+    import probatio as vol
+else:
+    try:
+        import probatio as vol
+    except ImportError:  # Older Home Assistant floor still ships voluptuous.
+        import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
