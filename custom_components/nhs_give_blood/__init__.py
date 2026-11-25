@@ -129,13 +129,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: GiveBloodConfigEntry) ->
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: GiveBloodConfigEntry) -> bool:
-    """Tear down a config entry."""
+    """Tear down a config entry.
+
+    Sign-out deliberately does not happen here: unload also runs on every
+    reload (including options changes), and signing out each time would churn
+    server sessions for no reason. Removal has its own hook below.
+    """
     runtime = entry.runtime_data
-    unloaded = await hass.config_entries.async_unload_platforms(entry, runtime.platforms)
-    if unloaded:
-        # Best effort; a failed sign-out must not block the unload.
-        await runtime.api.async_logout()
-    return unloaded
+    return await hass.config_entries.async_unload_platforms(entry, runtime.platforms)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: GiveBloodConfigEntry) -> None:
+    """Sign out when the entry is deleted, so the refresh token dies with it.
+
+    Best effort; a failed sign-out must not block the removal. Home Assistant
+    drops ``runtime_data`` on unload — which always runs first — so the client
+    is rebuilt here from the stored tokens. Logout needs no credentials, only
+    the refresh token.
+    """
+    tokens = entry.data.get(CONF_TOKENS)
+    if not tokens:
+        return
+    await GiveBloodApiClient(hass, tokens=tokens).async_logout()
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: GiveBloodConfigEntry) -> None:
