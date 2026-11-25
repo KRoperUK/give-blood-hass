@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
+if TYPE_CHECKING:  # Newer Home Assistant: schemas moved to probatio.
+    import probatio as vol
+else:
+    try:  # Use exactly the schema library HA's own flow code was built on:
+        # `vol` on 2026.9 and older, gone (probatio instead) from 2026.10.
+        from homeassistant.data_entry_flow import vol
+    except ImportError:
+        import probatio as vol
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,

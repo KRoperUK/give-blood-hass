@@ -103,14 +103,35 @@ class TestUnload:
 
         assert config_entry.state is ConfigEntryState.NOT_LOADED
 
-    async def test_unload_signs_out(
+    async def test_unload_does_not_sign_out(
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
     ) -> None:
+        """Unload (including reloads) keeps the server session; only removal signs out."""
         await setup_integration(hass, config_entry)
         await hass.config_entries.async_unload(config_entry.entry_id)
         await hass.async_block_till_done()
 
+        mock_api.async_logout.assert_not_awaited()
+
+    async def test_remove_signs_out(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        await setup_integration(hass, config_entry)
+        await hass.config_entries.async_remove(config_entry.entry_id)
+        await hass.async_block_till_done()
+
         mock_api.async_logout.assert_awaited()
+
+    async def test_remove_without_stored_tokens_is_a_noop(
+        self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
+    ) -> None:
+        """An entry with nothing to revoke removes cleanly without signing out."""
+        await setup_integration(hass, config_entry)
+        hass.config_entries.async_update_entry(config_entry, data={})
+        await hass.config_entries.async_remove(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        mock_api.async_logout.assert_not_awaited()
 
 
 class TestScanInterval:
