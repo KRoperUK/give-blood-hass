@@ -3,6 +3,13 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.2.1](https://github.com/KRoperUK/give-blood-hass/compare/v1.2.0...v1.2.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* sign out on entry removal, not on every unload ([#33](https://github.com/KRoperUK/give-blood-hass/issues/33)) ([98183f2](https://github.com/KRoperUK/give-blood-hass/commit/98183f252396e7cb65a67028893f8b43b409a172))
+
 ## [1.2.0](https://github.com/KRoperUK/give-blood-hass/compare/v1.1.0...v1.2.0) (2026-09-16)
 
 
