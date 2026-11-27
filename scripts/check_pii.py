@@ -18,6 +18,12 @@ value can never be mistaken for one.
 Add ``pii-allow`` to a line as a comment to accept a specific finding.
 
 Exit codes: 0 clean, 1 findings.
+
+Mirrored at ``give-blood-py/scripts/check_pii.py``: the two copies must stay
+in sync, so a new pattern belongs in both. (This copy additionally skips
+``.ha-config``, developer Home Assistant state — keep that carve-out when
+syncing. The ``sanitise_capture.py`` references below mean the script of that
+name in give-blood-py; this repo has no captures of its own.)
 """
 
 from __future__ import annotations
@@ -266,7 +272,7 @@ def main(argv: Iterable[str]) -> int:
             f"\n{total} potential PII/secret finding(s). Nothing was committed.\n"
             "Fix by removing the value, replacing it with a reserved placeholder\n"
             "(donor@example.invalid, SW1A 1AA, 07700900000, D0000000), or running\n"
-            "captures through scripts/sanitise_capture.py.\n"
+            "captures through give-blood-py's scripts/sanitise_capture.py.\n"
             f"If a finding is genuinely safe, add a '{ALLOW_MARKER}' comment to that line.",
             file=sys.stderr,
         )
