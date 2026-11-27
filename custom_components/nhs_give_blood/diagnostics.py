@@ -12,7 +12,6 @@ field — and this is a reverse-engineered API, so it will.
 
 from __future__ import annotations
 
-import hashlib
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
@@ -22,17 +21,6 @@ from nhs_give_blood import Appointment, DonorSnapshot
 
 from .const import CONF_TOKENS, DOMAIN, VERSION
 from .coordinator import GiveBloodConfigEntry
-
-
-def _fingerprint(value: str | None) -> str | None:
-    """Stable, non-reversible short hash.
-
-    Lets two reports be correlated as the same account without publishing the
-    identifier.
-    """
-    if not value:
-        return None
-    return hashlib.sha256(value.encode()).hexdigest()[:12]
 
 
 def _library_version() -> str:
@@ -182,7 +170,6 @@ async def async_get_config_entry_diagnostics(
             # Every credential-bearing key is reported as presence only. The
             # username is an email address and the tokens are live credentials,
             # so neither value appears at any level of detail.
-            "account_fingerprint": _fingerprint(entry.unique_id),
             "has_username": bool(entry.data.get(CONF_USERNAME)),
             "has_password": bool(entry.data.get(CONF_PASSWORD)),
             "has_stored_tokens": bool(entry.data.get(CONF_TOKENS)),

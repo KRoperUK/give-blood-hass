@@ -48,16 +48,14 @@ class TestStructure:
         assert "password" not in entry_section
         assert "tokens" not in entry_section
 
-    async def test_account_is_fingerprinted_not_named(
+    async def test_no_account_correlator_is_reported(
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
     ) -> None:
-        """A hash lets two reports be correlated without publishing the id."""
+        """No stable per-account value: a truncated hash of a small id space is reversible."""
         await setup_integration(hass, config_entry)
-        fingerprint = (await async_get_config_entry_diagnostics(hass, config_entry))["entry"]["account_fingerprint"]
+        entry_section = (await async_get_config_entry_diagnostics(hass, config_entry))["entry"]
 
-        assert fingerprint is not None
-        assert fingerprint != DONOR_ID
-        assert len(fingerprint) == 12
+        assert "account_fingerprint" not in entry_section
 
     async def test_reports_coordinator_health(
         self, hass: HomeAssistant, config_entry: MockConfigEntry, mock_api: AsyncMock
