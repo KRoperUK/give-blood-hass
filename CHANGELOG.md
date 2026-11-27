@@ -3,6 +3,13 @@
 This file is maintained by [release-please](https://github.com/googleapis/release-please) from
 Conventional Commit messages. Do not edit it by hand.
 
+## [1.2.2](https://github.com/KRoperUK/give-blood-hass/compare/v1.2.1...v1.2.2) (2026-11-27)
+
+
+### Bug Fixes
+
+* **diagnostics:** drop the reversible account fingerprint ([#38](https://github.com/KRoperUK/give-blood-hass/issues/38)) ([33d3354](https://github.com/KRoperUK/give-blood-hass/commit/33d33541e476c682ea62c0f8b22420167c75a2da))
+
 ## [1.2.1](https://github.com/KRoperUK/give-blood-hass/compare/v1.2.0...v1.2.1) (2026-11-25)
 
 
